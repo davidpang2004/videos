@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Class Videos · 课程视频</title>
+<style>
+  :root { --bg:#f7f7f5; --card:#fff; --text:#1d1d1f; --muted:#6e6e73; --accent:#0a66c2; --border:#e3e3e0; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#141416; --card:#1f1f23; --text:#f2f2f2; --muted:#a1a1a6; --accent:#5aa9ff; --border:#2e2e33; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+         font:16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .video { background:var(--card); border:1px solid var(--border); border-radius:12px;
+           padding:16px; margin-bottom:24px; scroll-margin-top:16px; }
+  .video h2 { font-size:1.15rem; margin:0 0 12px; }
+  video { width:100%; border-radius:8px; background:#000; display:block; }
+  .meta { display:flex; flex-wrap:wrap; gap:16px; margin-top:10px; font-size:.9rem; color:var(--muted); }
+  .meta a { color:var(--accent); text-decoration:none; }
+  .meta a:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Class Videos · 课程视频</h1>
+  <p class="sub">Click play to watch. 点击播放即可观看。</p>
+  <div id="list"></div>
+</main>
+<script>
+  // To add a video: put the .mp4 in /videos and add a line here.
+  const VIDEOS = [
+    { id: "class001", file: "Class001-SoftwareSetUp.mp4", title: "Class 001 — Software Set Up · 软件安装" },
+  ];
+
+  const list = document.getElementById("list");
+  for (const v of VIDEOS) {
+    const src = "videos/" + encodeURIComponent(v.file);
+    const sec = document.createElement("section");
+    sec.className = "video";
+    sec.id = v.id;
+    sec.innerHTML = `
+      <h2></h2>
+      <video controls preload="metadata" playsinline src="${src}"></video>
+      <div class="meta">
+        <a href="#${v.id}">🔗 Link to this video · 本视频链接</a>
+        <a href="${src}" download>⬇ Download · 下载</a>
+      </div>`;
+    sec.querySelector("h2").textContent = v.title;
+    list.appendChild(sec);
+  }
+  if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
+</script>
+</body>
+</html>
