@@ -5,54 +5,158 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Class Videos · 课程视频</title>
 <style>
-  :root { --bg:#f7f7f5; --card:#fff; --text:#1d1d1f; --muted:#6e6e73; --accent:#0a66c2; --border:#e3e3e0; }
+  :root { --bg:#f7f7f5; --card:#fff; --text:#1d1d1f; --muted:#6e6e73; --accent:#0a66c2; --border:#e3e3e0; --sel:#e8f1fb; }
   @media (prefers-color-scheme: dark) {
-    :root { --bg:#141416; --card:#1f1f23; --text:#f2f2f2; --muted:#a1a1a6; --accent:#5aa9ff; --border:#2e2e33; }
+    :root { --bg:#141416; --card:#1f1f23; --text:#f2f2f2; --muted:#a1a1a6; --accent:#5aa9ff; --border:#2e2e33; --sel:#1d2a3a; }
   }
   * { box-sizing: border-box; }
+  [hidden] { display:none !important; }
   body { margin:0; background:var(--bg); color:var(--text);
          font:16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
-  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+  main { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; }
   h1 { font-size: 1.6rem; margin: 0 0 4px; }
-  .sub { color: var(--muted); margin: 0 0 24px; }
-  .video { background:var(--card); border:1px solid var(--border); border-radius:12px;
-           padding:16px; margin-bottom:24px; scroll-margin-top:16px; }
-  .video h2 { font-size:1.15rem; margin:0 0 12px; }
-  video { width:100%; border-radius:8px; background:#000; display:block; }
-  .meta { display:flex; flex-wrap:wrap; gap:16px; margin-top:10px; font-size:.9rem; color:var(--muted); }
-  .meta a { color:var(--accent); text-decoration:none; }
-  .meta a:hover { text-decoration:underline; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .layout { display:grid; grid-template-columns: 1fr; gap:20px; align-items:start; }
+  @media (min-width: 900px) { .layout { grid-template-columns: minmax(0,1fr) 340px; } }
+  .player { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; scroll-margin-top:12px; }
+  .player h2 { font-size:1.15rem; margin:0 0 12px; }
+  video { width:100%; border-radius:8px; background:#000; display:block; aspect-ratio:16/9; }
+  .meta { display:flex; flex-wrap:wrap; gap:16px; margin-top:10px; font-size:.9rem; color:var(--muted); align-items:center; }
+  .meta a, .meta button.link { color:var(--accent); text-decoration:none; background:none; border:0; padding:0; font:inherit; cursor:pointer; }
+  .meta a:hover, .meta button.link:hover { text-decoration:underline; }
+  .resume { margin-top:10px; padding:8px 12px; border-radius:8px; background:var(--sel); font-size:.9rem;
+            display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .resume button { border:1px solid var(--accent); color:var(--accent); background:transparent; border-radius:6px; padding:3px 10px; font:inherit; cursor:pointer; }
+  .side { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; }
+  @media (min-width: 900px) { .side { position:sticky; top:12px; max-height:calc(100vh - 24px); overflow:auto; } }
+  .side h3 { font-size:.95rem; margin:2px 4px 10px; color:var(--muted); font-weight:600; }
+  #search { width:100%; padding:8px 10px; font:inherit; font-size:16px; border:1px solid var(--border); border-radius:8px;
+            background:var(--bg); color:var(--text); margin-bottom:10px; }
+  .item { display:flex; gap:10px; width:100%; text-align:left; padding:8px; border:0; border-radius:8px;
+          background:transparent; color:var(--text); font:inherit; cursor:pointer; align-items:flex-start; }
+  .item:hover { background:var(--bg); }
+  .item.on { background:var(--sel); }
+  .thumb { position:relative; flex:0 0 120px; aspect-ratio:16/9; border-radius:6px; background:#000 center/cover no-repeat; overflow:hidden; }
+  .thumb .dur { position:absolute; right:4px; bottom:4px; background:rgba(0,0,0,.75); color:#fff; font-size:.72rem; padding:0 4px; border-radius:3px; }
+  .thumb .bar { position:absolute; left:0; bottom:0; height:3px; background:#e53935; }
+  .item .t { font-size:.92rem; line-height:1.35; min-width:0; overflow-wrap:anywhere; }
+  .item .s { font-size:.8rem; color:var(--muted); margin-top:2px; }
+  .empty { color:var(--muted); font-size:.9rem; padding:8px; }
 </style>
 </head>
 <body>
 <main>
   <h1>Class Videos · 课程视频</h1>
-  <p class="sub">Click play to watch. 点击播放即可观看。</p>
-  <div id="list"></div>
+  <p class="sub">Pick a class from the list to watch it. 从列表中选择要观看的课程。</p>
+  <div class="layout">
+    <section class="player" id="player">
+      <h2 id="ptitle"></h2>
+      <video id="video" controls preload="metadata" playsinline></video>
+      <div class="resume" id="resume" hidden>
+        <span id="resumeText"></span>
+        <button id="resumeYes">Continue · 继续</button>
+        <button id="resumeNo">Start over · 从头</button>
+      </div>
+      <div class="meta">
+        <button class="link" id="copy">🔗 Copy link to this video · 复制本视频链接</button>
+        <a id="dl" download>⬇ Download · 下载</a>
+      </div>
+    </section>
+    <aside class="side">
+      <h3 id="count"></h3>
+      <input id="search" type="search" placeholder="Search classes · 搜索课程" hidden>
+      <div id="list"></div>
+    </aside>
+  </div>
 </main>
 <script>
-  // To add a video: put the .mp4 in /videos and add a line here.
+  // To add a video: run publish-class (it adds a line here). Newest goes last; the page shows newest first.
   const VIDEOS = [
     { id: "class001", file: "Class001-SoftwareSetUp.mp4", title: "Class 001 — Software Set Up · 软件安装" },
   ];
 
-  const list = document.getElementById("list");
-  for (const v of VIDEOS) {
-    const src = "videos/" + encodeURIComponent(v.file);
-    const sec = document.createElement("section");
-    sec.className = "video";
-    sec.id = v.id;
-    sec.innerHTML = `
-      <h2></h2>
-      <video controls preload="metadata" playsinline src="${src}"></video>
-      <div class="meta">
-        <a href="#${v.id}">🔗 Link to this video · 本视频链接</a>
-        <a href="${src}" download>⬇ Download · 下载</a>
-      </div>`;
-    sec.querySelector("h2").textContent = v.title;
-    list.appendChild(sec);
+  const $ = (id) => document.getElementById(id);
+  const video = $("video"), list = $("list"), search = $("search");
+  const items = VIDEOS.slice().reverse();          // newest first
+  const src = (f) => "videos/" + encodeURIComponent(f);
+
+  // Per-viewer progress, kept only in this browser.
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem("cv:" + k)); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem("cv:" + k, JSON.stringify(v)); } catch (e) {} },
+  };
+  const fmt = (s) => { s = Math.floor(s); const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = s % 60;
+    return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0"); };
+
+  let current = null;
+
+  function renderList() {
+    const q = search.value.trim().toLowerCase();
+    const shown = items.filter((v) => !q || v.title.toLowerCase().includes(q) || v.file.toLowerCase().includes(q));
+    $("count").textContent = `${VIDEOS.length} class${VIDEOS.length === 1 ? "" : "es"} · 共 ${VIDEOS.length} 节课`;
+    list.textContent = "";
+    if (!shown.length) { list.innerHTML = '<div class="empty">No match · 没有找到</div>'; return; }
+    for (const v of shown) {
+      const p = store.get(v.id) || {};
+      const b = document.createElement("button");
+      b.className = "item" + (current && current.id === v.id ? " on" : "");
+      b.innerHTML = `<div class="thumb"></div><div><div class="t"></div><div class="s"></div></div>`;
+      const th = b.querySelector(".thumb");
+      if (v.poster) th.style.backgroundImage = `url("${src(v.poster)}")`;
+      if (v.dur) th.insertAdjacentHTML("beforeend", `<span class="dur"></span>`), th.querySelector(".dur").textContent = v.dur;
+      if (p.t && p.d && !p.done) th.insertAdjacentHTML("beforeend", `<span class="bar" style="width:${Math.min(100, p.t / p.d * 100)}%"></span>`);
+      b.querySelector(".t").textContent = v.title;
+      b.querySelector(".s").textContent = p.done ? "✓ Watched · 已看完" : (p.t > 5 ? `Stopped at ${fmt(p.t)} · 看到 ${fmt(p.t)}` : "");
+      b.onclick = () => { select(v, true); $("player").scrollIntoView({ behavior: "smooth" }); };
+      list.appendChild(b);
+    }
   }
-  if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
+
+  function select(v, autoplay) {
+    current = v;
+    $("ptitle").textContent = v.title;
+    video.src = src(v.file);
+    video.poster = v.poster ? src(v.poster) : "";
+    $("dl").href = src(v.file);
+    if (location.hash !== "#" + v.id) history.replaceState(null, "", "#" + v.id);
+    document.title = v.title + " · Class Videos";
+    const p = store.get(v.id) || {};
+    const box = $("resume");
+    if (p.t > 5 && !p.done) {
+      $("resumeText").textContent = `You stopped at ${fmt(p.t)} · 上次看到 ${fmt(p.t)}`;
+      box.hidden = false;
+      $("resumeYes").onclick = () => { box.hidden = true; video.currentTime = p.t; video.play().catch(() => {}); };
+      $("resumeNo").onclick = () => { box.hidden = true; video.currentTime = 0; video.play().catch(() => {}); };
+    } else {
+      box.hidden = true;
+      if (autoplay) video.play().catch(() => {});
+    }
+    renderList();
+  }
+
+  let lastSave = 0;
+  video.addEventListener("timeupdate", () => {
+    if (!current || Date.now() - lastSave < 3000 || !video.duration) return;
+    lastSave = Date.now();
+    const prev = store.get(current.id) || {};
+    store.set(current.id, { t: video.currentTime, d: video.duration, done: prev.done || video.currentTime > video.duration - 20 });
+  });
+  video.addEventListener("ended", () => { if (current) { store.set(current.id, { t: 0, d: video.duration, done: true }); renderList(); } });
+  video.addEventListener("pause", () => renderList());
+
+  $("copy").onclick = async () => {
+    const url = location.href.split("#")[0] + "#" + current.id;
+    try { await navigator.clipboard.writeText(url); $("copy").textContent = "✓ Link copied · 已复制"; }
+    catch (e) { prompt("Copy this link · 复制此链接", url); }
+    setTimeout(() => { $("copy").textContent = "🔗 Copy link to this video · 复制本视频链接"; }, 2000);
+  };
+
+  search.hidden = VIDEOS.length <= 6;
+  search.addEventListener("input", renderList);
+
+  const fromHash = () => items.find((v) => "#" + v.id === location.hash);
+  window.addEventListener("hashchange", () => { const v = fromHash(); if (v && v !== current) select(v, false); });
+  if (items.length) select(fromHash() || items[0], false);
 </script>
 </body>
 </html>
